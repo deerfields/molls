@@ -1,0 +1,77 @@
+# render.yaml
+previews:
+  generation: automatic   # PR preview environments
+
+services:
+  # 1. Node.js API (Docker-based)
+  - type: web
+    name: mallos-api
+    runtime: docker
+    plan: standard
+    region: frankfurt
+    rootDir: .
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mallos-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: mallos-redis
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: NODE_ENV
+        value: production
+
+  # 2. React dashboard (static)
+  - type: web
+    name: mallos-dashboard
+    runtime: static
+    plan: starter
+    region: frankfurt
+    rootDir: frontend
+    buildCommand: yarn install && yarn build
+    staticPublishPath: ./build
+    envVars:
+      - key: REACT_APP_API_BASE_URL
+        value: https://mallos-api.onrender.com
+
+  # 3. Background worker (optional)
+  - type: worker
+    name: mallos-worker
+    runtime: docker
+    plan: starter
+    region: frankfurt
+    rootDir: .
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: mallos-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: mallos-redis
+          property: connectionString
+
+  # 4. Redis cache / pub-sub
+  - type: keyvalue
+    name: mallos-redis
+    plan: starter
+    region: frankfurt
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: everywhere
+    maxmemoryPolicy: allkeys-lru
+
+databases:
+  # 5. Postgres primary + read-replica
+  - name: mallos-db
+    plan: basic-4gb
+    region: frankfurt
+    postgresMajorVersion: "16"
+    readReplicas:
+      - name: mallos-db-replica
