@@ -1,4 +1,12 @@
-  # React dashboard (static)
+# render.yaml
+previews:
+  generation: automatic
+
+services:
+  - type: web
+    name: mallos-api
+    runtime: docker
+    ...
   - type: web
     name: mallos-dashboard
     runtime: static
