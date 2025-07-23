@@ -83,8 +83,6 @@
     "twilio": "^4.10.0",
     "stripe": "^13.5.0",
     "aws-sdk": "^2.1450.0",
-    "azure-storage": "^2.10.7",
-    "google-cloud": "^0.157.0",
     "web3": "^4.0.3",
     "ethers": "^6.7.1",
     "tensorflow": "^4.10.0",
