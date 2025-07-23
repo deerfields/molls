@@ -1,12 +1,22 @@
-# render.yaml
+# render.yaml - Production-Ready Configuration
 previews:
   generation: automatic
 
 services:
+  # API Service - Dockerized for maximum control
   - type: web
     name: mallos-api
     runtime: docker
-    ...
+    dockerfilePath: ./Dockerfile
+    dockerContext: ./
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+        
+  # Dashboard - Static build for performance
   - type: web
     name: mallos-dashboard
     runtime: static
@@ -17,3 +27,5 @@ services:
     envVars:
       - key: REACT_APP_API_BASE_URL
         value: https://mallos-api.onrender.com
+      - key: REACT_APP_ENV
+        value: production
