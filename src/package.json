@@ -1,0 +1,16 @@
+# Navigate to your project directory first
+cd /path/to/molls
+
+# OR if you're already in the project:
+pwd  # Should show: .../molls
+
+# Verify you're in the right location
+ls -la  # Should see: package.json, Dockerfile, render.yaml
+
+# Then run the fix commands:
+npm uninstall google-cloud
+npm install @google-cloud/storage@^7.7.0 @google-cloud/firestore@^7.4.0
+sed -i 's/require("google-cloud")/require("@google-cloud\/storage")/g' src/**/*.js
+git add package.json package-lock.json
+git commit -m "fix: migrate from deprecated google-cloud to modern packages"
+git push origin main
