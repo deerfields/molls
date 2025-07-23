@@ -1,8 +1,4 @@
 {
-    "@google-cloud/storage": "^7.7.0",
-    "@google-cloud/firestore": "^7.4.0",
-    "@google-cloud/logging": "^11.0.0",
-    "@google-cloud/pubsub": "^4.5.0",
   "name": "mallos-enterprise",
   "version": "1.0.0",
   "description": "Enterprise Mall Management Platform with AI, IoT, and Blockchain Integration",
@@ -88,10 +84,7 @@
     "stripe": "^13.5.0",
     "aws-sdk": "^2.1450.0",
     "azure-storage": "^2.10.7",
-    "@google-cloud/storage": "^7.7.0",
-    "@google-cloud/firestore": "^7.4.0",
-    "@google-cloud/logging": "^11.0.0",
-    "@google-cloud/pubsub": "^4.5.0",
+    "google-cloud": "^0.157.0",
     "web3": "^4.0.3",
     "ethers": "^6.7.1",
     "tensorflow": "^4.10.0",
@@ -105,7 +98,7 @@
     "node-cron": "^3.0.2",
     "node-schedule": "^2.1.1",
     "bull": "^4.11.3",
-    "prometheus-client": "^14.2.0",
+    "prometheus-client": "^0.16.0",
     "express-prometheus-middleware": "^1.2.0",
     "sentry-node": "^7.64.0",
     "newrelic": "^11.0.0",
@@ -180,4 +173,4 @@
     "url": "https://github.com/mallos-enterprise/mallos-platform/issues"
   },
   "homepage": "https://mallos.com"
-}
+} 
