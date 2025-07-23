@@ -1,23 +1,34 @@
-name: Generate lockfiles
+name: Production Install & Build
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Generate root lockfile
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Use Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
         run: npm install
-      - name: Generate frontend lockfile
+
+      - name: Generate package-lock.json if missing
         run: |
-          cd frontend
-          npm install
-      - name: Commit lockfiles
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add package-lock.json frontend/package-lock.json
-          git commit -m "Generate package-lock.json files via GitHub Actions" || echo "No changes to commit"
-          git push
+          if [ ! -f package-lock.json ]; then
+            npm install
+          fi
+
+      - name: Build project
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
