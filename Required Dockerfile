@@ -1,0 +1,50 @@
+# Multi-stage build for optimal production deployment
+FROM node:18-alpine AS builder
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY yarn.lock ./
+
+# Install dependencies
+RUN yarn install --frozen-lockfile --production=false
+
+# Copy source code
+COPY . .
+
+# Build application
+RUN yarn build
+
+# Production stage
+FROM node:18-alpine AS production
+
+# Create app directory
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY yarn.lock ./
+
+# Install only production dependencies
+RUN yarn install --frozen-lockfile --production=true && yarn cache clean
+
+# Copy built application from builder stage
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/build ./build
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nextjs -u 1001
+USER nextjs
+
+# Expose port
+EXPOSE 10000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:10000/health || exit 1
+
+# Start application
+CMD ["node", "dist/server.js"]
