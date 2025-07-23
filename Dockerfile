@@ -1,17 +1,7 @@
-# =============================================================================
-# MALLOS ENTERPRISE - DOCKERFILE
-# Multi-stage build for production-ready enterprise application
-# =============================================================================
+# Production-ready Dockerfile with dependency resolution
+FROM node:18-alpine AS base
 
-# =============================================================================
-# BUILD STAGE
-# =============================================================================
-FROM node:18-alpine AS builder
-
-# Set working directory
-WORKDIR /app
-
-# Install system dependencies
+# Install system dependencies for native modules
 RUN apk add --no-cache \
     python3 \
     make \
@@ -20,92 +10,53 @@ RUN apk add --no-cache \
     curl \
     && rm -rf /var/cache/apk/*
 
-# Copy package files
+WORKDIR /app
+
+# Copy package files first for better caching
 COPY package*.json ./
 COPY tsconfig.json ./
 
-# Install dependencies
-RUN npm ci --only=production && npm cache clean --force
-
-# Copy source code
-COPY src/ ./src/
-
-# Build the application
-RUN npm run build
-
-# =============================================================================
-# PRODUCTION STAGE
-# =============================================================================
-FROM node:18-alpine AS production
-
-# Create app user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
-
-# Set working directory
-WORKDIR /app
-
-# Install production dependencies only
-COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
-
-# Copy built application from builder stage
-COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
-
-# Copy necessary files
-COPY --chown=nodejs:nodejs .env.example ./
-COPY --chown=nodejs:nodejs ./uploads ./uploads
-
-# Create necessary directories
-RUN mkdir -p /app/logs /app/temp /app/uploads && \
-    chown -R nodejs:nodejs /app
-
-# Switch to non-root user
-USER nodejs
-
-# Expose port
-EXPOSE 3001
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:3001/health || exit 1
-
-# Start the application
-CMD ["node", "dist/index.js"]
-
-# =============================================================================
-# DEVELOPMENT STAGE
-# =============================================================================
-FROM node:18-alpine AS development
-
-# Set working directory
-WORKDIR /app
-
-# Install system dependencies for development
-RUN apk add --no-cache \
-    python3 \
-    make \
-    g++ \
-    git \
-    curl \
-    vim \
-    && rm -rf /var/cache/apk/*
-
-# Copy package files
-COPY package*.json ./
-COPY tsconfig.json ./
-
-# Install all dependencies (including dev dependencies)
-RUN npm install
+# Clear npm cache and install with legacy peer deps handling
+RUN npm cache clean --force && \
+    npm install --legacy-peer-deps --no-optional
 
 # Copy source code
 COPY . .
 
-# Create necessary directories
-RUN mkdir -p /app/logs /app/temp /app/uploads
+# Build the application
+RUN npm run build
 
-# Expose ports
-EXPOSE 3001 3002
+# Production stage
+FROM node:18-alpine AS production
 
-# Start development server
-CMD ["npm", "run", "dev"] 
+# Install runtime dependencies
+RUN apk add --no-cache curl
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install production dependencies only
+RUN npm ci --only=production --legacy-peer-deps && \
+    npm cache clean --force
+
+# Copy built application
+COPY --from=base /app/dist ./dist
+COPY --from=base /app/build ./build
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S molls -u 1001 -G nodejs
+
+USER molls
+
+# Expose port
+EXPOSE 10000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:10000/health || exit 1
+
+# Start application
+CMD ["node", "dist/server.js"]
